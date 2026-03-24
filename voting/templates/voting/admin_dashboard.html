@@ -1,0 +1,63 @@
+{% comment %}
+=== admin_dashboard.html ===
+Save as: voting/templates/voting/admin_dashboard.html
+{% endcomment %}
+
+{% extends "voting/base.html" %}
+{% block title %}Admin Dashboard — ElectionTH{% endblock %}
+
+{% block header_nav %}
+  <span style="color:var(--gold); font-size:0.85rem; font-weight:600; background:rgba(201,168,76,0.1); padding:0.3rem 0.8rem; border-radius:50px; border:1px solid rgba(201,168,76,0.3);">
+    🔧 ผู้ดูแลระบบ
+  </span>
+  <a href="/admin/" class="nav-btn nav-btn-outline">Django Admin</a>
+  <a href="{% url 'admin:logout' %}" class="nav-btn nav-btn-solid">ออกจากระบบ</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .admin-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .admin-nav-card {
+    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
+    border: 1.5px solid rgba(201,168,76,0.2);
+    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+    text-decoration: none; color: var(--white);
+    display: flex; flex-direction: column; gap: 1rem;
+    transition: all 0.25s; cursor: pointer;
+  }
+  .admin-nav-card:hover {
+    border-color: var(--gold); transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
+  .admin-card-icon { font-size: 3rem; }
+  .admin-card-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.3rem; font-weight: 700; color: var(--gold);
+  }
+  .admin-card-desc { color: var(--text-muted); line-height: 1.6; }
+  .admin-card-arrow { color: var(--gold); font-size: 1.5rem; margin-top: auto; }
+  @media (max-width:640px) { .admin-cards { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">🛡️ Admin Dashboard</div>
+  <div class="page-subtitle">ระบบจัดการและติดตามผลการเลือกตั้ง</div>
+</div>
+
+<div class="admin-cards">
+  <a href="{% url 'admin_constituency_results' %}" class="admin-nav-card">
+    <div class="admin-card-icon">🏛️</div>
+    <div class="admin-card-title">คะแนน ส.ส. เขต</div>
+    <div class="admin-card-desc">ดูผลคะแนนและสถิติการเลือกตั้งผู้แทนราษฎรแบบ Real-time</div>
+    <div class="admin-card-arrow">→</div>
+  </a>
+  <a href="{% url 'admin_party_results' %}" class="admin-nav-card">
+    <div class="admin-card-icon">🎌</div>
+    <div class="admin-card-title">คะแนนพรรคการเมือง</div>
+    <div class="admin-card-desc">ดูผลคะแนนพรรคการเมืองและสัดส่วนที่นั่ง ส.ส. บัญชีรายชื่อ</div>
+    <div class="admin-card-arrow">→</div>
+  </a>
+</div>
+{% endblock %}
