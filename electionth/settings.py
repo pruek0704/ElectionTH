@@ -122,4 +122,4 @@ LOGIN_URL = '/login/'
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 
-AUTH_USER_MODEL = 'auth.User'
+AUTH_USER_MODEL = 'voting.User'
