@@ -1,0 +1,141 @@
+{% extends "voting/base.html" %}
+{% block title %}ผล ส.ส. เขต — Admin{% endblock %}
+
+{% block header_nav %}
+  <span style="color:var(--gold); font-size:0.85rem; font-weight:600; background:rgba(201,168,76,0.1); padding:0.3rem 0.8rem; border-radius:50px; border:1px solid rgba(201,168,76,0.3);">🔧 ผู้ดูแลระบบ</span>
+  <a href="{% url 'admin_dashboard' %}" class="nav-btn nav-btn-outline">Dashboard</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .back-link { display:inline-flex; align-items:center; gap:0.4rem; color:var(--text-muted); text-decoration:none; font-size:0.9rem; margin-bottom:1rem; transition:color 0.2s; }
+  .back-link:hover { color:var(--gold); }
+
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem; }
+  .stat-box {
+    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
+    border: 1px solid rgba(201,168,76,0.2); border-radius:var(--radius);
+    padding: 1.2rem 1.5rem; text-align:center;
+  }
+  .stat-value { font-family:'Chakra Petch',sans-serif; font-size:2rem; font-weight:700; color:var(--gold); }
+  .stat-label { color:var(--text-muted); font-size:0.85rem; margin-top:0.25rem; }
+
+  .results-table { width:100%; border-collapse:collapse; }
+  .results-table th {
+    text-align:left; padding:0.85rem 1rem; font-size:0.85rem;
+    font-weight:600; color:var(--text-muted); text-transform:uppercase;
+    letter-spacing:0.5px; border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .results-table td {
+    padding:1rem; border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:0.95rem;
+  }
+  .results-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .results-table tr:first-child td { background:rgba(201,168,76,0.06); }
+
+  .rank-badge {
+    width:32px; height:32px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:0.9rem;
+  }
+  .rank-1 { background:linear-gradient(135deg,#C9A84C,#8B6914); color:var(--navy); }
+  .rank-2 { background:rgba(148,163,184,0.3); color:#94a3b8; }
+  .rank-3 { background:rgba(180,83,9,0.3); color:#fb923c; }
+  .rank-other { background:rgba(255,255,255,0.07); color:var(--text-muted); }
+
+  .vote-bar-wrap { display:flex; align-items:center; gap:0.8rem; }
+  .vote-bar-bg { flex:1; height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+  .vote-bar-fill { height:100%; border-radius:4px; transition:width 1s ease; }
+  .vote-count-text { font-family:'Chakra Petch',sans-serif; font-weight:700; color:var(--white); min-width:40px; text-align:right; }
+  .pct-text { color:var(--text-muted); font-size:0.85rem; min-width:45px; text-align:right; }
+
+  .refresh-info { display:flex; align-items:center; gap:0.5rem; color:var(--text-muted); font-size:0.85rem; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  @media (max-width:640px) { .stats-row { grid-template-columns:1fr 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'admin_dashboard' %}" class="back-link">← กลับ Dashboard</a>
+
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+  <div>
+    <div class="page-title">🏛️ ผลคะแนน ส.ส. เขต</div>
+    <div class="page-subtitle">อัปเดตทุก 10 วินาที</div>
+  </div>
+  <div class="refresh-info">
+    <div class="dot"></div>
+    Live — อัปเดตอัตโนมัติ
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-value">{{ total_votes }}</div>
+    <div class="stat-label">คะแนนรวม ส.ส. เขต</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ candidates|length }}</div>
+    <div class="stat-label">ผู้สมัครทั้งหมด</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{% if candidates %}{{ candidates.0.full_name|truncatechars:12 }}{% else %}—{% endif %}</div>
+    <div class="stat-label">ผู้นำตอนนี้</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">ตารางคะแนนผู้สมัคร</div>
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th style="width:50px">อันดับ</th>
+        <th>ผู้สมัคร</th>
+        <th>พรรค</th>
+        <th style="width:260px">คะแนน</th>
+      </tr>
+    </thead>
+    <tbody id="candidates-tbody">
+    {% for c in candidates %}
+    {% with forloop.counter as rank %}
+    <tr>
+      <td>
+        <span class="rank-badge rank-{% if rank <= 3 %}{{ rank }}{% else %}other{% endif %}">
+          {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% elif rank == 3 %}🥉{% else %}{{ rank }}{% endif %}
+        </span>
+      </td>
+      <td>
+        <div style="font-weight:600;">{{ c.full_name }}</div>
+        <div style="color:var(--text-muted); font-size:0.82rem;">หมายเลข {{ c.candidate_number }} | {{ c.district }}</div>
+      </td>
+      <td>
+        <span style="color:{{ c.party.color }}; font-weight:600;">{{ c.party.logo_emoji }} {{ c.party.name }}</span>
+      </td>
+      <td>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar-bg">
+            <div class="vote-bar-fill"
+                 style="width:{% if total_votes > 0 %}{% widthratio c.vote_count total_votes 100 %}%{% else %}0%{% endif %}; background:{{ c.party.color }};"></div>
+          </div>
+          <div class="vote-count-text">{{ c.vote_count }}</div>
+          <div class="pct-text">
+            {% if total_votes > 0 %}{% widthratio c.vote_count total_votes 100 %}%{% else %}0%{% endif %}
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% endwith %}
+    {% empty %}
+    <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:2rem;">ยังไม่มีคะแนน</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // Auto-refresh ทุก 10 วินาที
+  setTimeout(() => location.reload(), 10000);
+</script>
+{% endblock %}
