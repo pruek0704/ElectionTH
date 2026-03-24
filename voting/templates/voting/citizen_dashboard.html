@@ -1,0 +1,191 @@
+{% extends "voting/base.html" %}
+
+{% block title %}หน้าหลัก — ElectionTH{% endblock %}
+
+{% block extra_head %}
+<style>
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--navy-mid), var(--navy-light));
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: var(--radius-lg);
+    padding: 2rem 2.5rem;
+    margin-bottom: 2rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    position: relative; overflow: hidden;
+  }
+  .welcome-banner::before {
+    content: '🗳️';
+    position: absolute; right: 2rem; font-size: 6rem; opacity: 0.05;
+  }
+  .welcome-name {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.6rem; font-weight: 700; color: var(--gold);
+  }
+  .welcome-sub { color: var(--text-muted); margin-top: 0.3rem; }
+  .district-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3);
+    padding: 0.35rem 1rem; border-radius: 50px;
+    color: var(--gold); font-size: 0.9rem; font-weight: 600; margin-top: 0.8rem;
+  }
+
+  .section-heading {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.1rem; color: var(--text-muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 1.2rem;
+  }
+
+  .vote-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+  .vote-card {
+    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
+    border: 1.5px solid rgba(201,168,76,0.2);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    display: flex; flex-direction: column; gap: 1.2rem;
+    position: relative; overflow: hidden;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .vote-card.available:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    border-color: rgba(201,168,76,0.5);
+  }
+  .vote-card.done {
+    opacity: 0.7;
+    border-color: rgba(34,197,94,0.3);
+    background: linear-gradient(160deg, rgba(22,101,52,0.1), var(--navy-mid));
+  }
+
+  .vote-card-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+  }
+  .icon-constituency { background: linear-gradient(135deg, #1a56db22, #1a56db44); }
+  .icon-party        { background: linear-gradient(135deg, #7e3af222, #7e3af244); }
+
+  .vote-card-title {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.25rem; font-weight: 700; color: var(--white);
+  }
+  .vote-card-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+
+  .vote-status {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 1rem; border-radius: 8px;
+    font-weight: 600; font-size: 0.9rem;
+  }
+  .status-done    { background: rgba(22,101,52,0.25); color: #86efac; }
+  .status-pending { background: rgba(161,98,7,0.2);   color: #fcd34d; }
+
+  .vote-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.85rem; border-radius: 50px;
+    font-family: 'Sarabun', sans-serif; font-size: 1rem; font-weight: 700;
+    text-decoration: none; transition: all 0.25s;
+    border: none; cursor: pointer; text-align: center;
+  }
+  .vote-btn-active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: var(--navy);
+    box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+  }
+  .vote-btn-active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(201,168,76,0.45);
+  }
+  .vote-btn-done {
+    background: rgba(22,101,52,0.2);
+    color: #86efac; border: 1px solid rgba(34,197,94,0.3);
+    cursor: default;
+  }
+
+  .all-done-banner {
+    margin-top: 2rem;
+    background: linear-gradient(135deg, rgba(22,101,52,0.15), rgba(22,101,52,0.05));
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: var(--radius-lg); padding: 1.5rem 2rem;
+    text-align: center;
+  }
+  .all-done-title { color: #86efac; font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .all-done-sub { color: var(--text-muted); font-size: 0.9rem; }
+
+  @media (max-width: 640px) {
+    .vote-cards { grid-template-columns: 1fr; }
+    .welcome-banner { padding: 1.5rem; }
+    .welcome-name { font-size: 1.3rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+  <div>
+    <div style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.3rem;">ยินดีต้อนรับ</div>
+    <div class="welcome-name">คุณ{{ citizen.full_name }}</div>
+    <div class="welcome-sub">พร้อมใช้สิทธิ์เลือกตั้งแล้ว</div>
+    <div class="district-badge">📍 {{ citizen.district }}</div>
+  </div>
+</div>
+
+<!-- Vote Section -->
+<div class="section-heading">เลือกประเภทการเลือกตั้ง</div>
+
+<div class="vote-cards">
+
+  <!-- ส.ส. เขต -->
+  <div class="vote-card {% if voted_constituency %}done{% else %}available{% endif %}">
+    <div class="vote-card-icon icon-constituency">🏛️</div>
+    <div>
+      <div class="vote-card-title">เลือกตั้ง ส.ส. เขต</div>
+      <div class="vote-card-desc">
+        เลือกผู้แทนราษฎรประจำเขตเลือกตั้งของท่าน เพื่อเป็นตัวแทนในสภาผู้แทนราษฎร
+      </div>
+    </div>
+
+    {% if voted_constituency %}
+      <div class="vote-status status-done">✅ ใช้สิทธิ์แล้ว</div>
+      <div class="vote-btn vote-btn-done">✔ ลงคะแนนแล้ว</div>
+    {% else %}
+      <div class="vote-status status-pending">⏳ ยังไม่ได้ใช้สิทธิ์</div>
+      <a href="{% url 'vote_constituency' %}" class="vote-btn vote-btn-active">
+        🗳️ เลือกตั้ง ส.ส. เขต
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- พรรคการเมือง -->
+  <div class="vote-card {% if voted_party %}done{% else %}available{% endif %}">
+    <div class="vote-card-icon icon-party">🎌</div>
+    <div>
+      <div class="vote-card-title">เลือกตั้งพรรค</div>
+      <div class="vote-card-desc">
+        เลือกพรรคการเมืองที่ท่านสนับสนุน เพื่อจัดสรรที่นั่ง ส.ส. บัญชีรายชื่อ
+      </div>
+    </div>
+
+    {% if voted_party %}
+      <div class="vote-status status-done">✅ ใช้สิทธิ์แล้ว</div>
+      <div class="vote-btn vote-btn-done">✔ ลงคะแนนแล้ว</div>
+    {% else %}
+      <div class="vote-status status-pending">⏳ ยังไม่ได้ใช้สิทธิ์</div>
+      <a href="{% url 'vote_party' %}" class="vote-btn vote-btn-active">
+        🎌 เลือกตั้งพรรค
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+
+{% if voted_constituency and voted_party %}
+<div class="all-done-banner">
+  <div class="all-done-title">🎉 ท่านได้ใช้สิทธิ์ครบทุกประเภทแล้ว</div>
+  <div class="all-done-sub">ขอบคุณที่ร่วมใช้สิทธิ์เลือกตั้ง — เสียงของท่านมีคุณค่า</div>
+</div>
+{% endif %}
+
+{% endblock %}
