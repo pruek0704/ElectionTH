@@ -1,0 +1,113 @@
+{% extends "voting/base.html" %}
+{% block title %}ผลพรรค — Admin{% endblock %}
+
+{% block header_nav %}
+  <span style="color:var(--gold); font-size:0.85rem; font-weight:600; background:rgba(201,168,76,0.1); padding:0.3rem 0.8rem; border-radius:50px; border:1px solid rgba(201,168,76,0.3);">🔧 ผู้ดูแลระบบ</span>
+  <a href="{% url 'admin_dashboard' %}" class="nav-btn nav-btn-outline">Dashboard</a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .back-link { display:inline-flex; align-items:center; gap:0.4rem; color:var(--text-muted); text-decoration:none; font-size:0.9rem; margin-bottom:1rem; transition:color 0.2s; }
+  .back-link:hover { color:var(--gold); }
+
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem; }
+  .stat-box { background:linear-gradient(160deg, var(--navy-mid), var(--navy-light)); border:1px solid rgba(201,168,76,0.2); border-radius:var(--radius); padding:1.2rem 1.5rem; text-align:center; }
+  .stat-value { font-family:'Chakra Petch',sans-serif; font-size:2rem; font-weight:700; color:var(--gold); }
+  .stat-label { color:var(--text-muted); font-size:0.85rem; margin-top:0.25rem; }
+
+  /* Party result rows */
+  .party-result-row {
+    background:linear-gradient(160deg, var(--navy-mid), var(--navy-light));
+    border:1px solid rgba(255,255,255,0.07); border-radius:var(--radius);
+    padding:1.2rem 1.5rem; margin-bottom:0.8rem;
+    display:flex; align-items:center; gap:1.2rem;
+  }
+  .party-result-row:first-child { border-color:rgba(201,168,76,0.3); background:linear-gradient(160deg, rgba(201,168,76,0.07), var(--navy-mid)); }
+
+  .party-rank { font-family:'Chakra Petch',sans-serif; font-size:1.4rem; font-weight:700; min-width:40px; text-align:center; }
+  .party-result-emoji { font-size:1.8rem; }
+  .party-result-name { font-weight:700; font-size:1rem; }
+  .party-result-short { color:var(--text-muted); font-size:0.82rem; }
+  .party-result-info { flex:1; }
+  .vote-bar-wrap { display:flex; align-items:center; gap:0.8rem; width:240px; }
+  .vote-bar-bg { flex:1; height:10px; background:rgba(255,255,255,0.07); border-radius:5px; overflow:hidden; }
+  .vote-bar-fill { height:100%; border-radius:5px; }
+  .vote-count-text { font-family:'Chakra Petch',sans-serif; font-weight:700; color:var(--white); min-width:40px; text-align:right; }
+  .pct-text { color:var(--text-muted); font-size:0.85rem; min-width:48px; text-align:right; }
+
+  .refresh-info { display:flex; align-items:center; gap:0.5rem; color:var(--text-muted); font-size:0.85rem; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+  @media(max-width:640px) {
+    .stats-row { grid-template-columns:1fr 1fr; }
+    .vote-bar-wrap { width:140px; }
+    .party-result-row { flex-wrap:wrap; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'admin_dashboard' %}" class="back-link">← กลับ Dashboard</a>
+
+<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+  <div>
+    <div class="page-title">🎌 ผลคะแนนพรรคการเมือง</div>
+    <div class="page-subtitle">อัปเดตทุก 10 วินาที</div>
+  </div>
+  <div class="refresh-info"><div class="dot"></div> Live — อัปเดตอัตโนมัติ</div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="stat-value">{{ total_votes }}</div>
+    <div class="stat-label">คะแนนรวมพรรค</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">{{ parties|length }}</div>
+    <div class="stat-label">พรรคที่ลงแข่งขัน</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" style="font-size:1rem;">{% if parties %}{{ parties.0.name|truncatechars:14 }}{% else %}—{% endif %}</div>
+    <div class="stat-label">พรรคนำ</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">ผลคะแนนพรรค</div>
+
+  <div id="party-results">
+  {% for party in parties %}
+  {% with forloop.counter as rank %}
+  <div class="party-result-row">
+    <div class="party-rank" style="color:{% if rank == 1 %}var(--gold){% elif rank == 2 %}#94a3b8{% else %}var(--text-muted){% endif %};">
+      {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% elif rank == 3 %}🥉{% else %}{{ rank }}{% endif %}
+    </div>
+    <div class="party-result-emoji">{{ party.logo_emoji }}</div>
+    <div class="party-result-info">
+      <div class="party-result-name" style="color:{{ party.color }};">{{ party.name }}</div>
+      <div class="party-result-short">{{ party.short_name }} &nbsp;·&nbsp; {{ party.ideology }}</div>
+    </div>
+    <div class="vote-bar-wrap">
+      <div class="vote-bar-bg">
+        <div class="vote-bar-fill"
+             style="width:{% if total_votes > 0 %}{% widthratio party.vote_count total_votes 100 %}%{% else %}0%{% endif %}; background:{{ party.color }};"></div>
+      </div>
+      <div class="vote-count-text">{{ party.vote_count }}</div>
+      <div class="pct-text">
+        {% if total_votes > 0 %}{% widthratio party.vote_count total_votes 100 %}%{% else %}0%{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div style="text-align:center; color:var(--text-muted); padding:2rem;">ยังไม่มีคะแนน</div>
+  {% endfor %}
+  </div>
+</div>
+
+<script>
+  setTimeout(() => location.reload(), 10000);
+</script>
+{% endblock %}
