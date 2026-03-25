@@ -1,42 +1,66 @@
-{% comment %}
-=== admin_dashboard.html ===
-Save as: voting/templates/voting/admin_dashboard.html
-{% endcomment %}
-
 {% extends "voting/base.html" %}
 {% block title %}Admin Dashboard — ElectionTH{% endblock %}
 
 {% block header_nav %}
-  <span style="color:var(--gold); font-size:0.85rem; font-weight:600; background:rgba(201,168,76,0.1); padding:0.3rem 0.8rem; border-radius:50px; border:1px solid rgba(201,168,76,0.3);">
-    🔧 ผู้ดูแลระบบ
+  <span style="background:var(--red-bg); color:var(--red); font-size:0.9rem; font-weight:700; padding:0.4rem 1rem; border-radius:50px; border:1.5px solid var(--red-border);">
+    🛡️ ผู้ดูแลระบบ
   </span>
-  <a href="/admin/" class="nav-btn nav-btn-outline">Django Admin</a>
-  <a href="{% url 'admin:logout' %}" class="nav-btn nav-btn-solid">ออกจากระบบ</a>
+  <a href="{% url 'admin_logout' %}" class="nav-btn nav-btn-solid" style="background:#dc2626;"
+     onclick="return confirm('คุณต้องการออกจากระบบหรือไม่?')">ออกจากระบบ</a>
 {% endblock %}
 
 {% block extra_head %}
 <style>
-  .admin-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .status-panel {
+    display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+    padding: 1.5rem 2rem; border-radius: var(--radius-lg);
+    margin-bottom: 2.5rem; box-shadow: var(--shadow); flex-wrap: wrap;
+  }
+  .status-open   { background: var(--green-bg);  border: 2px solid var(--green-border); }
+  .status-closed { background: var(--amber-bg);  border: 2px solid var(--amber-border); }
+  .status-info   { display: flex; align-items: center; gap: 0.75rem; }
+  .dot-live { width: 12px; height: 12px; border-radius: 50%; background: var(--green); animation: blink 1.8s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .status-text { font-size: 1.1rem; font-weight: 700; }
+  .status-open   .status-text { color: var(--green); }
+  .status-closed .status-text { color: var(--amber); }
+  .status-sub { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+  .btn-toggle {
+    padding: 0.85rem 2rem; border-radius: 50px;
+    font-family: 'Sarabun', sans-serif; font-size: 1rem; font-weight: 700;
+    border: none; cursor: pointer; transition: all 0.22s; white-space: nowrap;
+  }
+  .btn-toggle-close { background: #dc2626; color: #fff; box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
+  .btn-toggle-close:hover { background: #b91c1c; transform: translateY(-1px); }
+  .btn-toggle-open  { background: var(--green); color: #fff; box-shadow: 0 4px 12px rgba(22,101,52,0.3); }
+  .btn-toggle-open:hover { background: #14532d; transform: translateY(-1px); }
+
+  .admin-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
   .admin-nav-card {
-    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
-    border: 1.5px solid rgba(201,168,76,0.2);
-    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
-    text-decoration: none; color: var(--white);
-    display: flex; flex-direction: column; gap: 1rem;
-    transition: all 0.25s; cursor: pointer;
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius-xl); padding: 3rem 2.5rem;
+    text-decoration: none; color: var(--text);
+    display: flex; flex-direction: column; gap: 1.2rem;
+    transition: all 0.22s; box-shadow: var(--shadow); min-height: 280px;
   }
-  .admin-nav-card:hover {
-    border-color: var(--gold); transform: translateY(-4px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  .admin-nav-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .admin-card-icon {
+    font-size: 3rem; width: 80px; height: 80px;
+    background: var(--primary-light); border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .admin-card-icon { font-size: 3rem; }
-  .admin-card-title {
-    font-family: 'Chakra Petch', sans-serif;
-    font-size: 1.3rem; font-weight: 700; color: var(--gold);
+  .admin-card-title { font-family: 'Chakra Petch', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text); margin-top: 0.5rem; }
+  .admin-card-desc  { color: var(--text-mid); font-size: 1rem; line-height: 1.7; flex: 1; }
+  .admin-card-cta {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--primary); color: #fff;
+    padding: 0.8rem 1.8rem; border-radius: 50px;
+    font-weight: 700; font-size: 1rem; align-self: flex-start; margin-top: auto;
   }
-  .admin-card-desc { color: var(--text-muted); line-height: 1.6; }
-  .admin-card-arrow { color: var(--gold); font-size: 1.5rem; margin-top: auto; }
-  @media (max-width:640px) { .admin-cards { grid-template-columns:1fr; } }
+  .admin-nav-card:hover .admin-card-cta { background: var(--primary-dark); }
+
+  @media (max-width: 680px) { .admin-cards { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
@@ -46,18 +70,45 @@ Save as: voting/templates/voting/admin_dashboard.html
   <div class="page-subtitle">ระบบจัดการและติดตามผลการเลือกตั้ง</div>
 </div>
 
+<div class="status-panel {% if election_config.is_open %}status-open{% else %}status-closed{% endif %}">
+  <div class="status-info">
+    {% if election_config.is_open %}
+      <div class="dot-live"></div>
+    {% else %}
+      <span style="font-size:1.3rem;">🔒</span>
+    {% endif %}
+    <div>
+      <div class="status-text">
+        {% if election_config.is_open %}การเลือกตั้งกำลังเปิดอยู่{% else %}การเลือกตั้งปิดแล้ว{% endif %}
+      </div>
+      <div class="status-sub">
+        {% if election_config.is_open and election_config.opened_at %}เปิดเมื่อ {{ election_config.opened_at|date:"d/m/Y H:i" }}
+        {% elif not election_config.is_open and election_config.closed_at %}ปิดเมื่อ {{ election_config.closed_at|date:"d/m/Y H:i" }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <form method="post" action="{% url 'toggle_election' %}"
+        onsubmit="return confirm('{% if election_config.is_open %}ยืนยันการปิดการเลือกตั้ง? ประชาชนจะไม่สามารถลงคะแนนได้อีก{% else %}ยืนยันการเปิดการเลือกตั้ง?{% endif %}')">
+    {% csrf_token %}
+    <button type="submit" class="btn-toggle {% if election_config.is_open %}btn-toggle-close{% else %}btn-toggle-open{% endif %}">
+      {% if election_config.is_open %}🔒 ปิดการเลือกตั้ง{% else %}🔓 เปิดการเลือกตั้ง{% endif %}
+    </button>
+  </form>
+</div>
+
 <div class="admin-cards">
   <a href="{% url 'admin_constituency_results' %}" class="admin-nav-card">
     <div class="admin-card-icon">🏛️</div>
     <div class="admin-card-title">คะแนน ส.ส. เขต</div>
-    <div class="admin-card-desc">ดูผลคะแนนและสถิติการเลือกตั้งผู้แทนราษฎรแบบ Real-time</div>
-    <div class="admin-card-arrow">→</div>
+    <div class="admin-card-desc">ดูผลคะแนนและสถิติการเลือกตั้งผู้แทนราษฎรแบบ Real-time อัปเดตอัตโนมัติทุก 10 วินาที</div>
+    <div class="admin-card-cta">ดูผลคะแนน →</div>
   </a>
   <a href="{% url 'admin_party_results' %}" class="admin-nav-card">
-    <div class="admin-card-icon">🎌</div>
+    <div class="admin-card-icon">🇹🇭</div>
     <div class="admin-card-title">คะแนนพรรคการเมือง</div>
-    <div class="admin-card-desc">ดูผลคะแนนพรรคการเมืองและสัดส่วนที่นั่ง ส.ส. บัญชีรายชื่อ</div>
-    <div class="admin-card-arrow">→</div>
+    <div class="admin-card-desc">ดูผลคะแนนพรรคการเมืองและสัดส่วนที่นั่ง ส.ส. บัญชีรายชื่อ อัปเดตอัตโนมัติทุก 10 วินาที</div>
+    <div class="admin-card-cta">ดูผลคะแนน →</div>
   </a>
 </div>
 {% endblock %}

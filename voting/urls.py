@@ -20,4 +20,6 @@ urlpatterns = [
     path('admin-panel/constituency/',   views.admin_constituency_results, name='admin_constituency_results'),
     path('admin-panel/party/',          views.admin_party_results,    name='admin_party_results'),
     path('api/results/',                views.api_results,            name='api_results'),
+    path('results/',            views.public_results,  name='public_results'),
+    path('admin-panel/toggle/', views.toggle_election, name='toggle_election'),
 ]

@@ -81,8 +81,20 @@
     <div class="stat-label">ผู้สมัครทั้งหมด</div>
   </div>
   <div class="stat-box">
-    <div class="stat-value">{% if candidates %}{{ candidates.0.full_name|truncatechars:12 }}{% else %}—{% endif %}</div>
-    <div class="stat-label">ผู้นำตอนนี้</div>
+    
+      <div class="stat-value" style="font-size:1.1rem; line-height:1.4;">
+    {% if candidates %}{{ candidates.0.full_name }}{% else %}—{% endif %}
+  </div>
+  <div class="stat-label" style="margin-top:0.4rem;">
+    {% if candidates %}
+      <span style="color:{{ candidates.0.party.color }}; font-weight:600;">
+        {{ candidates.0.party.logo_emoji }} {{ candidates.0.party.name }}
+      </span><br>
+      {{ candidates.0.district }}
+    {% else %}
+      ผู้นำตอนนี้
+    {% endif %}
+  </div>
   </div>
 </div>
 

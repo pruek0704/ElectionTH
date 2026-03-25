@@ -1,5 +1,3 @@
-# voting/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -8,28 +6,30 @@ from django.db import transaction
 from django.db.models import F
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 
-from .models import Party, Candidate, VoteUsage
+from .models import Party, Candidate, VoteUsage, ElectionConfig
 
 
-# ─── Citizen Auth ──────────────────────────────────────────────────────────────
+# ─── Citizen Auth ───────────────────────────────────────────────────────────────
 
 def citizen_login(request):
     if request.user.is_authenticated and not request.user.is_staff:
         return redirect('citizen_dashboard')
 
     if request.method == 'POST':
-        full_name = request.POST.get('full_name', '').strip()
+        full_name   = " ".join(request.POST.get('full_name', '').split()).strip()
         national_id = request.POST.get('national_id', '').strip()
 
-        # username ของ Citizen = national_id
         user = authenticate(request, username=national_id, password=national_id)
 
-        if user and not user.is_staff and user.get_full_name() == full_name:
-            login(request, user)
-            return redirect('citizen_dashboard')
-        else:
-            messages.error(request, 'ชื่อ-นามสกุล หรือ เลขบัตรประชาชนไม่ถูกต้อง')
+        if user and not user.is_staff:
+            stored_name = " ".join(user.get_full_name().split()).strip()
+            if stored_name.lower() == full_name.lower() or user.national_id == national_id:
+                login(request, user)
+                return redirect('citizen_dashboard')
+
+        messages.error(request, 'ชื่อ-นามสกุล หรือ เลขบัตรประชาชนไม่ถูกต้อง')
 
     return render(request, 'voting/citizen_login.html')
 
@@ -46,26 +46,33 @@ def citizen_dashboard(request):
     if request.user.is_staff:
         return redirect('admin_dashboard')
 
+    config = ElectionConfig.get()
     usages = VoteUsage.objects.filter(
         citizen=request.user
     ).values_list('vote_type', flat=True)
 
     return render(request, 'voting/citizen_dashboard.html', {
         'voted_constituency': 'constituency' in usages,
-        'voted_party': 'party' in usages,
+        'voted_party':        'party' in usages,
+        'election_is_open':   config.is_open,
+        'closed_at':          config.closed_at,
     })
 
 
 @login_required(login_url='citizen_login')
 def vote_constituency(request):
+    config = ElectionConfig.get()
+    if not config.is_open:
+        messages.warning(request, 'ขณะนี้ปิดรับการลงคะแนนแล้ว')
+        return redirect('citizen_dashboard')
+
     if VoteUsage.objects.filter(citizen=request.user, vote_type='constituency').exists():
         messages.warning(request, 'คุณได้ใช้สิทธิ์ ส.ส. เขตไปแล้ว')
         return redirect('citizen_dashboard')
 
     candidates = Candidate.objects.filter(
-        district=request.user.district, is_active=True
-    ).select_related('party') if hasattr(Candidate, 'is_active') else \
-    Candidate.objects.filter(district=request.user.district).select_related('party')
+        district=request.user.district
+    ).select_related('party')
 
     return render(request, 'voting/vote_constituency.html', {'candidates': candidates})
 
@@ -73,6 +80,11 @@ def vote_constituency(request):
 @login_required(login_url='citizen_login')
 @require_POST
 def submit_constituency_vote(request):
+    config = ElectionConfig.get()
+    if not config.is_open:
+        messages.warning(request, 'ขณะนี้ปิดรับการลงคะแนนแล้ว')
+        return redirect('citizen_dashboard')
+
     candidate_id = request.POST.get('candidate_id')
     if not candidate_id:
         messages.error(request, 'กรุณาเลือกผู้สมัคร')
@@ -97,6 +109,11 @@ def submit_constituency_vote(request):
 
 @login_required(login_url='citizen_login')
 def vote_party(request):
+    config = ElectionConfig.get()
+    if not config.is_open:
+        messages.warning(request, 'ขณะนี้ปิดรับการลงคะแนนแล้ว')
+        return redirect('citizen_dashboard')
+
     if VoteUsage.objects.filter(citizen=request.user, vote_type='party').exists():
         messages.warning(request, 'คุณได้ใช้สิทธิ์เลือกพรรคไปแล้ว')
         return redirect('citizen_dashboard')
@@ -108,6 +125,11 @@ def vote_party(request):
 @login_required(login_url='citizen_login')
 @require_POST
 def submit_party_vote(request):
+    config = ElectionConfig.get()
+    if not config.is_open:
+        messages.warning(request, 'ขณะนี้ปิดรับการลงคะแนนแล้ว')
+        return redirect('citizen_dashboard')
+
     party_id = request.POST.get('party_id')
     if not party_id:
         messages.error(request, 'กรุณาเลือกพรรค')
@@ -130,7 +152,28 @@ def submit_party_vote(request):
     return redirect('citizen_dashboard')
 
 
-# ─── Admin Views ────────────────────────────────────────────────────────────────
+# ─── Public Results (ดูได้หลังปิดหีบ) ─────────────────────────────────────────
+
+@login_required(login_url='citizen_login')
+def public_results(request):
+    config = ElectionConfig.get()
+    if config.is_open:
+        messages.info(request, 'ยังไม่สามารถดูผลได้ — การเลือกตั้งยังไม่ปิด')
+        return redirect('citizen_dashboard')
+
+    parties    = Party.objects.order_by('-vote_count')
+    candidates = Candidate.objects.select_related('party').order_by('-vote_count')
+
+    return render(request, 'voting/public_results.html', {
+        'parties':          parties,
+        'candidates':       candidates,
+        'total_party':      sum(p.vote_count for p in parties),
+        'total_candidate':  sum(c.vote_count for c in candidates),
+        'closed_at':        config.closed_at,
+    })
+
+
+# ─── Admin Auth ─────────────────────────────────────────────────────────────────
 
 def admin_login(request):
     if request.user.is_authenticated and request.user.is_staff:
@@ -164,9 +207,28 @@ def staff_required(view_func):
     return wrapper
 
 
+# ─── Admin Views ────────────────────────────────────────────────────────────────
+
 @staff_required
 def admin_dashboard(request):
-    return render(request, 'voting/admin_dashboard.html')
+    return render(request, 'voting/admin_dashboard.html', {
+        'election_config': ElectionConfig.get(),
+    })
+
+
+@staff_required
+def toggle_election(request):
+    if request.method == 'POST':
+        config = ElectionConfig.get()
+        config.is_open = not config.is_open
+        if config.is_open:
+            config.opened_at = timezone.now()
+        else:
+            config.closed_at = timezone.now()
+        config.save()
+        status = 'เปิด' if config.is_open else 'ปิด'
+        messages.success(request, f'{status}การเลือกตั้งแล้ว')
+    return redirect('admin_dashboard')
 
 
 @staff_required
@@ -184,7 +246,7 @@ def admin_party_results(request):
     parties     = Party.objects.order_by('-vote_count')
     total_votes = sum(p.vote_count for p in parties)
     return render(request, 'voting/admin_party_results.html', {
-        'parties': parties,
+        'parties':     parties,
         'total_votes': total_votes,
     })
 
@@ -196,8 +258,8 @@ def api_results(request):
         'full_name', 'candidate_number', 'district', 'vote_count', 'party__name', 'party__color'
     ).order_by('-vote_count'))
     return JsonResponse({
-        'parties':          parties,
-        'candidates':       candidates,
-        'total_party':      sum(p['vote_count'] for p in parties),
-        'total_candidate':  sum(c['vote_count'] for c in candidates),
+        'parties':         parties,
+        'candidates':      candidates,
+        'total_party':     sum(p['vote_count'] for p in parties),
+        'total_candidate': sum(c['vote_count'] for c in candidates),
     })

@@ -1,90 +1,80 @@
 {% extends "voting/base.html" %}
-
 {% block title %}เลือกตั้งพรรค — ElectionTH{% endblock %}
 
 {% block extra_head %}
 <style>
   .back-link {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
-    margin-bottom: 1rem; transition: color 0.2s;
+    color: var(--text-muted); text-decoration: none; font-size: 0.95rem;
+    margin-bottom: 1.5rem; transition: color 0.2s; font-weight: 500;
   }
-  .back-link:hover { color: var(--gold); }
+  .back-link:hover { color: var(--primary); }
 
-  .parties-list { display: grid; gap: 1rem; margin-bottom: 2rem; }
+  .parties-list { display: grid; gap: 0.9rem; margin-bottom: 2rem; }
 
   .party-card {
-    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
-    border: 2px solid rgba(255,255,255,0.08);
+    background: var(--surface); border: 2px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem 2rem;
-    cursor: pointer; transition: all 0.25s;
-    display: flex; align-items: center; gap: 1.5rem;
-    position: relative;
+    cursor: pointer; transition: all 0.22s;
+    display: flex; align-items: center; gap: 1.2rem;
+    box-shadow: var(--shadow-sm);
   }
-  .party-card:hover { border-color: rgba(201,168,76,0.35); transform: translateX(4px); }
+  .party-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateX(4px); }
   .party-card.selected {
-    border-color: var(--gold);
-    background: linear-gradient(160deg, rgba(201,168,76,0.07), var(--navy-mid));
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.15), 0 8px 24px rgba(0,0,0,0.4);
+    border-color: var(--primary); border-width: 2.5px;
+    background: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(26,86,219,0.1), var(--shadow);
     transform: translateX(0);
   }
 
-  .party-color-bar {
-    width: 5px; height: 60px; border-radius: 4px; flex-shrink: 0;
-  }
+  .party-stripe { width: 5px; height: 56px; border-radius: 3px; flex-shrink: 0; }
+  .party-emoji  { font-size: 2rem; flex-shrink: 0; }
 
-  .party-emoji {
-    font-size: 2.2rem; flex-shrink: 0;
-  }
-
-  .party-info { flex: 1; }
-  .party-name {
-    font-weight: 700; font-size: 1.1rem; color: var(--white);
-    margin-bottom: 0.25rem;
-  }
-  .party-ideology { color: var(--text-muted); font-size: 0.88rem; }
-  .party-short {
-    font-family: 'Chakra Petch', sans-serif;
-    font-size: 0.8rem; font-weight: 600;
-    background: rgba(255,255,255,0.07); border-radius: 50px;
-    padding: 0.15rem 0.6rem; display: inline-block; margin-top: 0.3rem;
-    color: var(--text-muted);
-  }
-
-  .party-check {
-    width: 32px; height: 32px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.15);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
-  }
-  .party-card.selected .party-check {
-    background: var(--gold); border-color: var(--gold); color: var(--navy);
+  .party-info   { flex: 1; }
+  .party-name   { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+  .party-meta   { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.15rem; }
+  .party-short  {
+    display: inline-block; font-family: 'Chakra Petch', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    background: var(--surface-2); border: 1.5px solid var(--border);
+    padding: 0.15rem 0.6rem; border-radius: 50px;
+    color: var(--text-muted); margin-top: 0.3rem;
   }
 
   .party-radio { display: none; }
 
-  .confirm-section {
-    background: rgba(201,168,76,0.05);
-    border: 1px solid rgba(201,168,76,0.2);
+  .check-box {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--border); background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; color: transparent; flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .party-card.selected .check-box { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  .confirm-bar {
+    background: var(--surface); border: 2px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem 2rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+    box-shadow: var(--shadow-sm); position: sticky; bottom: 1.5rem;
   }
+  .confirm-bar.highlighted { border-color: var(--primary); background: var(--primary-light); }
+
+  .selected-label { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .selected-name  { font-weight: 700; font-size: 1.15rem; color: var(--text); }
+
   .btn-confirm {
-    padding: 0.9rem 2.5rem; border-radius: 50px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-    color: var(--navy); font-weight: 700; font-size: 1rem;
-    border: none; cursor: pointer; font-family: 'Sarabun', sans-serif;
-    transition: all 0.25s; white-space: nowrap;
-    box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+    padding: 1rem 2.5rem; border-radius: 50px;
+    background: var(--primary); color: #fff;
+    font-weight: 700; font-size: 1.05rem; font-family: 'Sarabun', sans-serif;
+    border: none; cursor: pointer; white-space: nowrap;
+    box-shadow: var(--shadow); transition: all 0.22s;
   }
-  .btn-confirm:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(201,168,76,0.45);
-  }
-  .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-confirm:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   @media (max-width: 640px) {
-    .confirm-section { flex-direction: column; align-items: flex-start; }
+    .confirm-bar { flex-direction: column; align-items: flex-start; position: static; }
     .btn-confirm { width: 100%; }
     .party-card { padding: 1.2rem; }
   }
@@ -95,7 +85,7 @@
 <a href="{% url 'citizen_dashboard' %}" class="back-link">← กลับหน้าหลัก</a>
 
 <div class="page-header">
-  <div class="page-title">🎌 เลือกตั้งพรรคการเมือง</div>
+  <div class="page-title">🇹🇭 เลือกตั้งพรรคการเมือง</div>
   <div class="page-subtitle">กรุณาเลือกพรรคที่ท่านสนับสนุนเพียง 1 พรรค</div>
 </div>
 
@@ -104,33 +94,29 @@
 
   <div class="parties-list">
     {% for party in parties %}
-    <label class="party-card" for="party-{{ party.pk }}"
-           data-id="{{ party.pk }}" data-name="{{ party.name }}">
-      <input type="radio" id="party-{{ party.pk }}" name="party_id"
-             value="{{ party.pk }}" class="party-radio">
-      <div class="party-color-bar" style="background:{{ party.color }};"></div>
+    <label class="party-card" for="party-{{ party.pk }}" data-name="{{ party.name }}">
+      <input type="radio" id="party-{{ party.pk }}" name="party_id" value="{{ party.pk }}" class="party-radio">
+      <div class="party-stripe" style="background:{{ party.color }};"></div>
       <div class="party-emoji">{{ party.logo_emoji }}</div>
       <div class="party-info">
-        <div class="party-name">{{ party.name }}</div>
-        <div class="party-ideology">{{ party.ideology }}</div>
+        <div class="party-name" style="color:{{ party.color }};">{{ party.name }}</div>
+        <div class="party-meta">{{ party.ideology }}</div>
         <span class="party-short">{{ party.short_name }}</span>
       </div>
-      <div class="party-check">✓</div>
+      <div class="check-box">✓</div>
     </label>
     {% empty %}
-    <div style="color:var(--text-muted); text-align:center; padding:3rem;">
-      ไม่พบข้อมูลพรรคการเมือง
-    </div>
+    <div style="text-align:center; color:var(--text-muted); padding:3rem;">ไม่พบข้อมูลพรรคการเมือง</div>
     {% endfor %}
   </div>
 
-  <div class="confirm-section">
+  <div class="confirm-bar" id="confirm-bar">
     <div>
-      <div style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.3rem;">พรรคที่เลือก:</div>
-      <div id="no-sel-msg" style="color:var(--text-muted); font-style:italic;">กรุณาเลือกพรรคด้านบน</div>
-      <div id="sel-name" style="font-weight:700; font-size:1.1rem; display:none;"></div>
+      <div class="selected-label">พรรคที่เลือก</div>
+      <div id="no-sel" style="color:var(--text-muted); font-style:italic;">กรุณาเลือกพรรคด้านบน</div>
+      <div class="selected-name" id="sel-name" style="display:none;"></div>
     </div>
-    <button type="button" id="confirm-btn" class="btn-confirm" disabled onclick="confirmVote()">
+    <button type="button" id="confirm-btn" class="btn-confirm" disabled onclick="doConfirm()">
       ✅ ยืนยันการเลือกตั้ง
     </button>
   </div>
@@ -138,33 +124,27 @@
 
 <script>
   const cards = document.querySelectorAll('.party-card');
-  const confirmBtn = document.getElementById('confirm-btn');
-  const noMsg = document.getElementById('no-sel-msg');
-  const selNameEl = document.getElementById('sel-name');
+  const bar   = document.getElementById('confirm-bar');
 
   cards.forEach(card => {
     card.addEventListener('click', () => {
       cards.forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       card.querySelector('input[type=radio]').checked = true;
-      noMsg.style.display = 'none';
-      selNameEl.textContent = card.dataset.name;
-      selNameEl.style.display = 'block';
-      confirmBtn.disabled = false;
+      document.getElementById('no-sel').style.display = 'none';
+      const el = document.getElementById('sel-name');
+      el.textContent = card.dataset.name;
+      el.style.display = 'block';
+      document.getElementById('confirm-btn').disabled = false;
+      bar.classList.add('highlighted');
     });
   });
 
-  function confirmVote() {
-    const name = selNameEl.textContent;
-    const ok = confirm(
-      `⚠️ ยืนยันการลงคะแนนพรรค\n\nพรรค: ${name}\n\nคุณแน่ใจหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`
-    );
-    if (ok) {
-      const ok2 = confirm('🔐 ยืนยันอีกครั้ง — กด "ตกลง" เพื่อส่งคะแนนเลือกตั้ง');
-      if (ok2) {
-        document.getElementById('vote-form').submit();
-      }
-    }
+  function doConfirm() {
+    const name = document.getElementById('sel-name').textContent;
+    if (!confirm(`⚠️ ยืนยันการลงคะแนนพรรค\n\nพรรค: ${name}\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return;
+    if (!confirm('🔐 ยืนยันอีกครั้ง — กด "ตกลง" เพื่อส่งคะแนน')) return;
+    document.getElementById('vote-form').submit();
   }
 </script>
 {% endblock %}

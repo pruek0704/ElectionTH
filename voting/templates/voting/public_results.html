@@ -1,0 +1,205 @@
+{% extends "voting/base.html" %}
+{% block title %}ผลการเลือกตั้ง — ElectionTH{% endblock %}
+
+{% block extra_head %}
+<style>
+  .results-header {
+    background: linear-gradient(135deg, var(--primary), #2563eb);
+    color: #fff; border-radius: var(--radius-lg);
+    padding: 2.2rem 2.5rem; margin-bottom: 2.5rem;
+    box-shadow: var(--shadow-lg);
+  }
+  .results-header-title { font-family: 'Chakra Petch', sans-serif; font-size: 2rem; font-weight: 700; }
+  .results-header-sub   { opacity: 0.8; font-size: 1rem; margin-top: 0.4rem; }
+
+  .tabs { display: flex; gap: 0.75rem; margin-bottom: 2rem; }
+  .tab-btn {
+    padding: 0.75rem 2rem; border-radius: 50px;
+    font-family: 'Sarabun', sans-serif; font-size: 1rem; font-weight: 700;
+    cursor: pointer; border: 2px solid var(--border);
+    background: var(--surface); color: var(--text-mid);
+    transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .tab-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Party results */
+  .party-row {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem 2rem;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 1.5rem;
+    box-shadow: var(--shadow-sm); transition: box-shadow 0.2s;
+  }
+  .party-row:first-child { border-color: #fcd34d; background: #fffbeb; }
+  .party-row:hover { box-shadow: var(--shadow); }
+
+  .party-rank {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    min-width: 48px; text-align: center;
+  }
+  .rank-1 { color: #b45309; }
+  .rank-2 { color: #6b7280; }
+  .rank-3 { color: #92400e; }
+  .rank-other { color: var(--text-muted); font-size: 1.1rem; }
+
+  .party-color-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  }
+  .party-emoji { font-size: 1.8rem; flex-shrink: 0; }
+  .party-info  { flex: 1; }
+  .party-name  { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+  .party-ideology { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.1rem; }
+
+  .bar-wrap { width: 260px; display: flex; align-items: center; gap: 0.8rem; }
+  .bar-bg   { flex: 1; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; transition: width 1s ease; }
+  .vote-count { font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 1rem; color: var(--text); min-width: 36px; text-align: right; }
+  .pct-text   { color: var(--text-muted); font-size: 0.9rem; min-width: 44px; text-align: right; }
+
+  /* Candidate table */
+  .cand-table { width: 100%; border-collapse: collapse; }
+  .cand-table th {
+    text-align: left; padding: 0.85rem 1rem; font-size: 0.9rem;
+    font-weight: 700; color: var(--text-mid); text-transform: uppercase;
+    border-bottom: 2px solid var(--border); letter-spacing: 0.3px;
+  }
+  .cand-table td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 1rem; }
+  .cand-table tr:hover td { background: var(--surface-2); }
+  .cand-table tr:first-child td { background: #fffbeb; }
+
+  .rank-badge {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem;
+  }
+  .rb-1 { background: #fef3c7; color: #b45309; border: 2px solid #fcd34d; }
+  .rb-2 { background: #f3f4f6; color: #6b7280; border: 2px solid #d1d5db; }
+  .rb-3 { background: #fff7ed; color: #92400e; border: 2px solid #fed7aa; }
+  .rb-o { background: var(--surface-2); color: var(--text-muted); border: 1.5px solid var(--border); }
+
+  .total-box {
+    background: var(--primary-light); border: 2px solid var(--primary);
+    border-radius: var(--radius); padding: 1rem 1.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 1.5rem; font-size: 1rem; color: var(--primary); font-weight: 600;
+  }
+
+  @media (max-width: 680px) {
+    .tabs { flex-wrap: wrap; }
+    .bar-wrap { width: 120px; }
+    .party-row { flex-wrap: wrap; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="results-header">
+  <div class="results-header-title">📊 ผลการเลือกตั้ง</div>
+  <div class="results-header-sub">
+    ผลอย่างเป็นทางการ{% if closed_at %} — ปิดหีบเมื่อ {{ closed_at|date:"d เดือน m ปี Y เวลา H:i น." }}{% endif %}
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('party')">🎌 ผลพรรคการเมือง</button>
+  <button class="tab-btn" onclick="switchTab('constituency')">🏛️ ผล ส.ส. เขต</button>
+</div>
+
+<!-- Tab: พรรค -->
+<div class="tab-panel active" id="tab-party">
+  <div class="total-box">
+    🗳️ คะแนนรวมทั้งหมด: <strong>{{ total_party }} คะแนน</strong>
+  </div>
+
+  {% for party in parties %}
+  {% with forloop.counter as rank %}
+  <div class="party-row">
+    <div class="party-rank {% if rank == 1 %}rank-1{% elif rank == 2 %}rank-2{% elif rank == 3 %}rank-3{% else %}rank-other{% endif %}">
+      {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% elif rank == 3 %}🥉{% else %}{{ rank }}{% endif %}
+    </div>
+    <div class="party-emoji">{{ party.logo_emoji }}</div>
+    <div class="party-color-dot" style="background:{{ party.color }};"></div>
+    <div class="party-info">
+      <div class="party-name">{{ party.name }}</div>
+      <div class="party-ideology">{{ party.short_name }} · {{ party.ideology }}</div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:{% if total_party > 0 %}{% widthratio party.vote_count total_party 100 %}%{% else %}0%{% endif %}; background:{{ party.color }};"></div>
+      </div>
+      <div class="vote-count">{{ party.vote_count }}</div>
+      <div class="pct-text">{% if total_party > 0 %}{% widthratio party.vote_count total_party 100 %}%{% else %}0%{% endif %}</div>
+    </div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div style="text-align:center; color:var(--text-muted); padding:3rem;">ยังไม่มีคะแนน</div>
+  {% endfor %}
+</div>
+
+<!-- Tab: ส.ส. เขต -->
+<div class="tab-panel" id="tab-constituency">
+  <div class="total-box">
+    🗳️ คะแนนรวมทั้งหมด: <strong>{{ total_candidate }} คะแนน</strong>
+  </div>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <table class="cand-table">
+      <thead>
+        <tr>
+          <th style="width:60px; padding-left:1.5rem;">อันดับ</th>
+          <th>ผู้สมัคร</th>
+          <th>พรรค</th>
+          <th style="width:280px;">คะแนน</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in candidates %}
+        {% with forloop.counter as rank %}
+        <tr>
+          <td style="padding-left:1.5rem;">
+            <span class="rank-badge {% if rank == 1 %}rb-1{% elif rank == 2 %}rb-2{% elif rank == 3 %}rb-3{% else %}rb-o{% endif %}">
+              {{ rank }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight:700;">{{ c.full_name }}</div>
+            <div style="color:var(--text-muted); font-size:0.85rem;">หมายเลข {{ c.candidate_number }} · {{ c.district }}</div>
+          </td>
+          <td>
+            <span style="color:{{ c.party.color }}; font-weight:700;">{{ c.party.logo_emoji }} {{ c.party.name }}</span>
+          </td>
+          <td>
+            <div class="bar-wrap" style="width:100%;">
+              <div class="bar-bg">
+                <div class="bar-fill" style="width:{% if total_candidate > 0 %}{% widthratio c.vote_count total_candidate 100 %}%{% else %}0%{% endif %}; background:{{ c.party.color }};"></div>
+              </div>
+              <div class="vote-count">{{ c.vote_count }}</div>
+              <div class="pct-text">{% if total_candidate > 0 %}{% widthratio c.vote_count total_candidate 100 %}%{% else %}0%{% endif %}</div>
+            </div>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:2rem;">ยังไม่มีคะแนน</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+
+{% endblock %}

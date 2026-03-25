@@ -62,3 +62,20 @@ class VoteUsage(models.Model):
 
     def __str__(self):
         return f"{self.citizen.get_full_name()} | {self.get_vote_type_display()}"
+    
+class ElectionConfig(models.Model):
+    is_open     = models.BooleanField(default=True, verbose_name='เปิดรับการเลือกตั้ง')
+    opened_at   = models.DateTimeField(null=True, blank=True)
+    closed_at   = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'การตั้งค่าการเลือกตั้ง'
+
+    def __str__(self):
+        return f"{'เปิด' if self.is_open else 'ปิด'}การเลือกตั้ง"
+
+    @classmethod
+    def get(cls):
+        """ดึง config — ถ้ายังไม่มีให้สร้างใหม่อัตโนมัติ"""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

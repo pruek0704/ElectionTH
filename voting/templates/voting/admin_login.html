@@ -1,5 +1,4 @@
 {% extends "voting/base.html" %}
-
 {% block title %}Admin Login — ElectionTH{% endblock %}
 
 {% block header_nav %}
@@ -8,80 +7,90 @@
 
 {% block extra_head %}
 <style>
-  .login-wrap {
-    flex: 1; display: flex; align-items: center; justify: center;
-    min-height: calc(100vh - 200px); padding: 2rem;
+  .login-page {
+    min-height: calc(100vh - 72px - 80px);
     display: flex; align-items: center; justify-content: center;
+    padding: 2rem 1rem;
   }
   .login-box {
-    width: 100%; max-width: 420px;
-    background: linear-gradient(160deg, #1A2F45, #0D1B2A);
-    border: 1px solid rgba(185,28,28,0.4);
-    border-radius: 24px; padding: 2.5rem 2rem;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    width: 100%; max-width: 560px;
+    background: var(--surface);
+    border: 2px solid #fecaca;
+    border-radius: var(--radius-xl);
+    padding: 3rem 3rem;
+    box-shadow: var(--shadow-lg);
     position: relative; overflow: hidden;
   }
   .login-box::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #991b1b, #dc2626, #991b1b);
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #dc2626, #f87171, #dc2626);
   }
-  .login-emblem { text-align: center; margin-bottom: 1.8rem; }
+
+  .login-emblem { text-align: center; margin-bottom: 2rem; }
   .emblem-icon {
-    width: 80px; height: 80px; border-radius: 50%;
-    background: linear-gradient(135deg, #991b1b, #dc2626);
+    width: 96px; height: 96px; border-radius: 50%;
+    background: var(--red-bg);
+    border: 3px solid #fca5a5;
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.2rem; margin: 0 auto 1rem;
-    box-shadow: 0 0 0 6px rgba(220,38,38,0.1), 0 0 0 12px rgba(220,38,38,0.05);
+    font-size: 2.8rem; margin: 0 auto 1.2rem;
   }
   .login-title {
     font-family: 'Chakra Petch', sans-serif;
-    font-size: 1.5rem; font-weight: 700; color: #fca5a5;
+    font-size: 2rem; font-weight: 700; color: var(--red);
   }
-  .login-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
+  .login-subtitle { color: var(--text-muted); font-size: 1.05rem; margin-top: 0.4rem; }
 
   .admin-warning {
-    display: flex; align-items: center; gap: 0.5rem;
-    background: rgba(185,28,28,0.12); border: 1px solid rgba(220,38,38,0.25);
-    border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1.5rem;
-    font-size: 0.82rem; color: #fca5a5;
+    display: flex; align-items: center; gap: 0.6rem;
+    background: var(--red-bg); border: 1.5px solid var(--red-border);
+    border-radius: var(--radius); padding: 0.85rem 1.1rem;
+    margin-bottom: 2rem; font-size: 1rem; color: var(--red); font-weight: 500;
   }
 
-  .form-group { margin-bottom: 1.3rem; }
-  .form-label { display:block; font-size:0.9rem; font-weight:600; color:#fca5a5; margin-bottom:0.5rem; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label {
+    display: block; font-size: 1rem; font-weight: 700;
+    color: var(--text); margin-bottom: 0.55rem;
+  }
   .form-input {
-    width: 100%; padding: 0.85rem 1.1rem;
-    background: rgba(255,255,255,0.05);
-    border: 1.5px solid rgba(220,38,38,0.2);
-    border-radius: 10px; color: var(--white);
-    font-family: 'Sarabun', sans-serif; font-size: 1rem;
+    width: 100%; padding: 1rem 1.2rem;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: 'Sarabun', sans-serif; font-size: 1.05rem;
     transition: all 0.2s; outline: none;
   }
-  .form-input::placeholder { color: rgba(255,255,255,0.25); }
+  .form-input::placeholder { color: var(--text-muted); }
   .form-input:focus {
     border-color: #dc2626;
-    background: rgba(220,38,38,0.06);
-    box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+    background: var(--red-bg);
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.1);
   }
 
   .btn-login {
-    width: 100%; padding: 1rem;
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    color: white; font-size: 1.05rem; font-weight: 700;
+    width: 100%; padding: 1.1rem;
+    background: #dc2626;
+    color: #fff; font-size: 1.15rem; font-weight: 700;
     border: none; border-radius: 50px; cursor: pointer;
-    font-family: 'Sarabun', sans-serif; transition: all 0.25s;
-    box-shadow: 0 4px 20px rgba(220,38,38,0.3);
+    font-family: 'Sarabun', sans-serif; transition: all 0.22s;
+    box-shadow: 0 4px 14px rgba(220,38,38,0.3);
+    margin-top: 0.5rem;
   }
-  .btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(220,38,38,0.45);
+  .btn-login:hover { background: #b91c1c; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(220,38,38,0.35); }
+  .btn-login:active { transform: translateY(0); }
+
+  @media (max-width: 600px) {
+    .login-box { padding: 2rem 1.5rem; }
+    .login-title { font-size: 1.6rem; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-wrap">
+<div class="login-page">
   <div class="login-box">
+
     <div class="login-emblem">
       <div class="emblem-icon">🛡️</div>
       <div class="login-title">Admin Panel</div>
@@ -109,8 +118,19 @@
                autocomplete="current-password" required>
       </div>
 
+      {% if messages %}
+        {% for msg in messages %}
+          {% if msg.tags == 'error' %}
+          <div style="background:var(--red-bg); border:1.5px solid var(--red-border); border-radius:var(--radius); padding:0.85rem 1rem; color:var(--red); font-size:0.95rem; margin-bottom:1rem;">
+            ❌ {{ msg }}
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
       <button type="submit" class="btn-login">🔐 เข้าสู่ระบบ Admin</button>
     </form>
+
   </div>
 </div>
 {% endblock %}

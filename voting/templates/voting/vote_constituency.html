@@ -1,110 +1,97 @@
 {% extends "voting/base.html" %}
-
 {% block title %}เลือกตั้ง ส.ส. เขต — ElectionTH{% endblock %}
 
 {% block extra_head %}
 <style>
-  .page-header { margin-bottom: 2rem; }
   .back-link {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
-    margin-bottom: 1rem; transition: color 0.2s;
+    color: var(--text-muted); text-decoration: none; font-size: 0.95rem;
+    margin-bottom: 1.5rem; transition: color 0.2s; font-weight: 500;
   }
-  .back-link:hover { color: var(--gold); }
+  .back-link:hover { color: var(--primary); }
 
   .candidates-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.2rem; margin-bottom: 2rem;
   }
 
   .candidate-card {
-    background: linear-gradient(160deg, var(--navy-mid), var(--navy-light));
-    border: 2px solid rgba(255,255,255,0.08);
-    border-radius: var(--radius-lg); padding: 1.5rem;
-    cursor: pointer; transition: all 0.25s;
-    position: relative; overflow: hidden;
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.8rem 1.5rem;
+    cursor: pointer; transition: all 0.22s;
+    position: relative; display: flex; flex-direction: column; gap: 0.8rem;
+    box-shadow: var(--shadow-sm);
   }
-  .candidate-card:hover {
-    border-color: rgba(201,168,76,0.4);
-    transform: translateY(-2px);
-  }
+  .candidate-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-2px); }
   .candidate-card.selected {
-    border-color: var(--gold);
-    background: linear-gradient(160deg, rgba(201,168,76,0.08), var(--navy-mid));
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.2), 0 12px 30px rgba(0,0,0,0.4);
+    border-color: var(--primary); border-width: 2.5px;
+    background: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(26,86,219,0.12), var(--shadow);
   }
 
   .candidate-number {
-    position: absolute; top: 1rem; right: 1rem;
-    width: 44px; height: 44px; border-radius: 50%;
-    background: rgba(255,255,255,0.07);
+    position: absolute; top: 1.2rem; right: 1.2rem;
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--surface-2); border: 2px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Chakra Petch', sans-serif;
-    font-size: 1.1rem; font-weight: 700; color: var(--gold);
-    border: 1.5px solid rgba(201,168,76,0.3);
+    font-family: 'Chakra Petch', sans-serif; font-size: 1.1rem; font-weight: 700;
+    color: var(--text-mid);
   }
-  .candidate-card.selected .candidate-number {
-    background: var(--gold); color: var(--navy);
-  }
+  .candidate-card.selected .candidate-number { background: var(--primary); color: #fff; border-color: var(--primary); }
 
   .candidate-avatar {
-    width: 56px; height: 56px; border-radius: 14px;
-    background: linear-gradient(135deg, #1a56db33, #1a56db55);
+    width: 60px; height: 60px; border-radius: 14px;
+    background: var(--primary-light);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; margin-bottom: 1rem;
+    font-size: 1.8rem; border: 2px solid var(--border);
   }
+  .candidate-card.selected .candidate-avatar { border-color: var(--primary); }
 
-  .candidate-name {
-    font-weight: 700; font-size: 1.05rem; color: var(--white);
-    margin-bottom: 0.4rem;
-  }
+  .candidate-name { font-weight: 700; font-size: 1.05rem; color: var(--text); padding-right: 2.5rem; }
   .candidate-party {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.25rem 0.75rem; border-radius: 50px;
-    font-size: 0.8rem; font-weight: 600;
-    border: 1px solid;
+    padding: 0.3rem 0.8rem; border-radius: 50px;
+    font-size: 0.85rem; font-weight: 600; border: 1.5px solid;
+    align-self: flex-start;
   }
-  .check-mark {
-    position: absolute; bottom: 1rem; right: 1rem;
+
+  .check-circle {
+    position: absolute; bottom: 1.2rem; right: 1.2rem;
     width: 28px; height: 28px; border-radius: 50%;
-    background: var(--gold); color: var(--navy);
+    background: var(--primary); color: #fff;
     display: none; align-items: center; justify-content: center;
     font-size: 0.9rem; font-weight: 700;
   }
-  .candidate-card.selected .check-mark { display: flex; }
+  .candidate-card.selected .check-circle { display: flex; }
 
-  /* Hidden radio */
-  .candidate-radio { display: none; }
+  input[type=radio] { display: none; }
 
-  .confirm-section {
-    background: rgba(201,168,76,0.05);
-    border: 1px solid rgba(201,168,76,0.2);
-    border-radius: var(--radius-lg); padding: 1.5rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  .confirm-bar {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem 2rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    position: sticky; bottom: 1.5rem;
   }
-  .selected-preview { flex: 1; }
-  .selected-preview-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.3rem; }
-  .selected-preview-name { font-weight: 700; font-size: 1.1rem; color: var(--white); }
-  .selected-preview-party { color: var(--gold); font-size: 0.9rem; }
+  .confirm-bar.highlighted { border-color: var(--primary); background: var(--primary-light); }
 
-  #no-selection-msg { color: var(--text-muted); font-style: italic; }
+  .selected-info { flex: 1; }
+  .selected-label { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .selected-name  { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+  .selected-party { color: var(--primary); font-size: 0.95rem; }
 
   .btn-confirm {
-    padding: 0.9rem 2.5rem; border-radius: 50px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-    color: var(--navy); font-weight: 700; font-size: 1rem;
-    border: none; cursor: pointer; font-family: 'Sarabun', sans-serif;
-    transition: all 0.25s; white-space: nowrap;
-    box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+    padding: 1rem 2.5rem; border-radius: 50px;
+    background: var(--primary); color: #fff;
+    font-weight: 700; font-size: 1.05rem; font-family: 'Sarabun', sans-serif;
+    border: none; cursor: pointer; white-space: nowrap;
+    box-shadow: var(--shadow); transition: all 0.22s;
   }
-  .btn-confirm:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(201,168,76,0.45);
-  }
+  .btn-confirm:hover:not(:disabled) { background: var(--primary-dark); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
   .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
   @media (max-width: 640px) {
-    .confirm-section { flex-direction: column; align-items: flex-start; }
+    .confirm-bar { flex-direction: column; align-items: flex-start; position: static; }
     .btn-confirm { width: 100%; }
   }
 </style>
@@ -115,7 +102,7 @@
 
 <div class="page-header">
   <div class="page-title">🏛️ เลือกตั้ง ส.ส. เขต</div>
-  <div class="page-subtitle">{{ citizen.district }} — กรุณาเลือกผู้สมัครเพียง 1 คน</div>
+  <div class="page-subtitle">{{ request.user.district }} — กรุณาเลือกผู้สมัครเพียง 1 คน</div>
 </div>
 
 <form method="post" action="{% url 'submit_constituency' %}" id="vote-form">
@@ -123,77 +110,63 @@
 
   <div class="candidates-grid">
     {% for candidate in candidates %}
-    <label class="candidate-card" for="cand-{{ candidate.pk }}" data-id="{{ candidate.pk }}" data-name="{{ candidate.full_name }}" data-party="{{ candidate.party.name }}">
+    <label class="candidate-card" for="cand-{{ candidate.pk }}"
+           data-name="{{ candidate.full_name }}" data-party="{{ candidate.party.name }}">
+      <input type="radio" id="cand-{{ candidate.pk }}" name="candidate_id" value="{{ candidate.pk }}">
       <div class="candidate-number">{{ candidate.candidate_number }}</div>
-      <input type="radio" id="cand-{{ candidate.pk }}" name="candidate_id"
-             value="{{ candidate.pk }}" class="candidate-radio">
       <div class="candidate-avatar">👤</div>
       <div class="candidate-name">{{ candidate.full_name }}</div>
       <div class="candidate-party"
-           style="color:{{ candidate.party.color }}; border-color:{{ candidate.party.color }}44; background:{{ candidate.party.color }}11;">
+           style="color:{{ candidate.party.color }}; border-color:{{ candidate.party.color }}55; background:{{ candidate.party.color }}11;">
         {{ candidate.party.logo_emoji }} {{ candidate.party.name }}
       </div>
-      <div class="check-mark">✓</div>
+      <div class="check-circle">✓</div>
     </label>
     {% empty %}
-    <div style="color:var(--text-muted); grid-column:1/-1; text-align:center; padding:3rem;">
+    <div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:3rem;">
       ไม่พบผู้สมัครในเขตเลือกตั้งของท่าน
     </div>
     {% endfor %}
   </div>
 
-  <!-- Confirm Section -->
-  <div class="confirm-section">
-    <div class="selected-preview">
-      <div class="selected-preview-label">ผู้สมัครที่เลือก:</div>
-      <div id="no-selection-msg">กรุณาเลือกผู้สมัครด้านบน</div>
-      <div id="selection-display" style="display:none;">
-        <div class="selected-preview-name" id="selected-name"></div>
-        <div class="selected-preview-party" id="selected-party"></div>
+  <div class="confirm-bar" id="confirm-bar">
+    <div class="selected-info">
+      <div class="selected-label">ผู้สมัครที่เลือก</div>
+      <div id="no-sel" style="color:var(--text-muted); font-style:italic;">กรุณาเลือกผู้สมัครด้านบน</div>
+      <div id="sel-display" style="display:none;">
+        <div class="selected-name" id="sel-name"></div>
+        <div class="selected-party" id="sel-party"></div>
       </div>
     </div>
-    <button type="button" id="confirm-btn" class="btn-confirm" disabled
-            onclick="confirmVote()">
+    <button type="button" id="confirm-btn" class="btn-confirm" disabled onclick="doConfirm()">
       ✅ ยืนยันการเลือกตั้ง
     </button>
   </div>
-
 </form>
 
 <script>
   const cards = document.querySelectorAll('.candidate-card');
-  const confirmBtn = document.getElementById('confirm-btn');
-  const noMsg = document.getElementById('no-selection-msg');
-  const selDisplay = document.getElementById('selection-display');
-  const selName = document.getElementById('selected-name');
-  const selParty = document.getElementById('selected-party');
+  const bar   = document.getElementById('confirm-bar');
 
   cards.forEach(card => {
     card.addEventListener('click', () => {
       cards.forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       card.querySelector('input[type=radio]').checked = true;
-
-      selName.textContent = card.dataset.name;
-      selParty.textContent = card.dataset.party;
-      noMsg.style.display = 'none';
-      selDisplay.style.display = 'block';
-      confirmBtn.disabled = false;
+      document.getElementById('no-sel').style.display = 'none';
+      document.getElementById('sel-display').style.display = 'block';
+      document.getElementById('sel-name').textContent  = card.dataset.name;
+      document.getElementById('sel-party').textContent = card.dataset.party;
+      document.getElementById('confirm-btn').disabled = false;
+      bar.classList.add('highlighted');
     });
   });
 
-  function confirmVote() {
-    const name = selName.textContent;
-    const ok = confirm(
-      `⚠️ ยืนยันการลงคะแนน ส.ส. เขต\n\nผู้สมัคร: ${name}\n\n` +
-      `คุณแน่ใจหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`
-    );
-    if (ok) {
-      const ok2 = confirm('🔐 ยืนยันอีกครั้ง — กด "ตกลง" เพื่อส่งคะแนนเลือกตั้ง');
-      if (ok2) {
-        document.getElementById('vote-form').submit();
-      }
-    }
+  function doConfirm() {
+    const name = document.getElementById('sel-name').textContent;
+    if (!confirm(`⚠️ ยืนยันการลงคะแนน ส.ส. เขต\n\nผู้สมัคร: ${name}\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) return;
+    if (!confirm('🔐 ยืนยันอีกครั้ง — กด "ตกลง" เพื่อส่งคะแนน')) return;
+    document.getElementById('vote-form').submit();
   }
 </script>
 {% endblock %}
